@@ -153,7 +153,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 5px 0;
+            padding: 6px 0;
             border-bottom: 1px dashed #d0e4d2;
             font-size: 0.85rem;
         }
@@ -167,22 +167,29 @@
             font-weight: 500;
         }
 
+        .result-value-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
         .result-value {
             font-weight: 700;
             color: var(--accent-blue);
             font-size: 0.9rem;
         }
 
-        .highlight {
+        .highlight-m {
             color: #d83b01;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            font-weight: 700;
         }
 
-        .sub-value {
-            font-size: 0.8rem;
-            color: #555;
-            font-weight: normal;
-            margin-left: 4px;
+        .highlight-mm {
+            color: #d83b01;
+            font-size: 1rem;
+            font-weight: 700;
         }
     </style>
 </head>
@@ -232,17 +239,17 @@
         <div class="result-box">
             <div class="result-item">
                 <span class="result-label">Đường kính tính toán (D):</span>
-                <span class="result-value highlight">
-                    <span id="res_d_mm">- mm</span>
-                    <span id="res_d_m" class="sub-value">(- m)</span>
-                </span>
+                <div class="result-value-group">
+                    <span id="res_d_m" class="highlight-m">- m</span>
+                    <span id="res_d_mm" class="highlight-mm">- mm</span>
+                </div>
             </div>
             <div class="result-item">
-                <span class="result-label">Vận tốc dòng chảy (v):</span>
+                <span class="result-label">Vận tốc trong đường ống:</span>
                 <span class="result-value" id="res_v">- m/s</span>
             </div>
             <div class="result-item">
-                <span class="result-label">Tổn thất thủy lực (Hf):</span>
+                <span class="result-label">Tổn thất thủy lực (toàn tuyến):</span>
                 <span class="result-value" id="res_hf">- m</span>
             </div>
         </div>
@@ -260,8 +267,8 @@
         const deltaH = hHead - hTail;
 
         if (qDay <= 0 || L <= 0 || deltaH <= 0) {
+            document.getElementById('res_d_m').innerText = "- m";
             document.getElementById('res_d_mm').innerText = "Không hợp lệ";
-            document.getElementById('res_d_m').innerText = "";
             document.getElementById('res_v').innerText = "- m/s";
             document.getElementById('res_hf').innerText = "- m";
             return;
@@ -269,19 +276,18 @@
 
         const qSec = qDay / 86400;
 
-        // Công thức Hazen-Williams tính đường kính D (m):
-        // D = [ (10.67 * L * Q^1.852) / (DeltaH * C^1.852) ] ^ (1 / 4.87)
+        // Công thức Hazen-Williams tính đường kính D (m)
         const dM = Math.pow((10.67 * L * Math.pow(qSec, 1.852)) / (deltaH * Math.pow(C, 1.852)), 1 / 4.87);
         const dMm = dM * 1000;
 
-        // Vận tốc dòng chảy v (m/s) = (4 * Q) / (PI * D^2)
+        // Vận tốc dòng chảy v (m/s)
         const v = (4 * qSec) / (Math.PI * Math.pow(dM, 2));
 
         // Tổn thất thủy lực toàn tuyến Hf (m)
         const hf = (11.737 * L * Math.pow(qSec, 1.852)) / (Math.pow(C, 1.852) * Math.pow(dM, 4.87));
 
+        document.getElementById('res_d_m').innerText = dM.toFixed(4) + " m";
         document.getElementById('res_d_mm').innerText = dMm.toFixed(1) + " mm";
-        document.getElementById('res_d_m').innerText = "(" + dM.toFixed(4) + " m)";
         document.getElementById('res_v').innerText = v.toFixed(3) + " m/s";
         document.getElementById('res_hf').innerText = hf.toFixed(2) + " m";
     }
