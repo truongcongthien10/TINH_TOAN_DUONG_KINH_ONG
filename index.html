@@ -98,7 +98,6 @@
             text-overflow: ellipsis;
         }
 
-        /* Xóa nút tăng giảm số */
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -120,7 +119,6 @@
             transition: all 0.2s ease-in-out;
         }
 
-        /* Chỉ ô được chọn (:focus) mới đổi sang shade vàng nhạt và nổi nhẹ */
         input:focus, select:focus {
             background-color: var(--focus-yellow-bg);
             border-color: var(--focus-yellow-border);
@@ -128,7 +126,6 @@
             box-shadow: 0 0 0 3px rgba(255, 235, 130, 0.45), 0 3px 8px rgba(0,0,0,0.1);
         }
 
-        /* Nút tính toán 3D đồng bộ màu xanh lá */
         .btn-calc {
             width: 100%;
             background: linear-gradient(135deg, #107c41 0%, #0b592e 100%);
@@ -209,6 +206,13 @@
             font-size: 1rem;
             font-weight: 700;
         }
+
+        /* Màu tím nổi bật cho Đề xuất chọn */
+        .highlight-suggest {
+            color: #6b21a8;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -238,15 +242,15 @@
             <div class="form-group" style="grid-column: span 2;">
                 <label for="material">Vật liệu đường ống:</label>
                 <select id="material" onchange="calculatePipeDiameter()">
-                    <option value="140" selected>Ống HDPE (C = 140)</option>
-                    <option value="140">Ống PVC (C = 140)</option>
-                    <option value="140">Ống Inox (C = 140)</option>
-                    <option value="130">Ống gang dẻo mới (C = 130)</option>
-                    <option value="120">Ống gang dẻo phục hồi (C = 120)</option>
-                    <option value="120">Ống thép mới (C = 120)</option>
-                    <option value="110">Ống thép phục hồi (C = 110)</option>
-                    <option value="90">Ống thép cũ (C = 90)</option>
-                    <option value="110">Ống gang xám (C = 110)</option>
+                    <option value="140" data-name="Ống HDPE" selected>Ống HDPE (C = 140)</option>
+                    <option value="140" data-name="Ống PVC">Ống PVC (C = 140)</option>
+                    <option value="140" data-name="Ống Inox">Ống Inox (C = 140)</option>
+                    <option value="130" data-name="Ống gang dẻo mới">Ống gang dẻo mới (C = 130)</option>
+                    <option value="120" data-name="Ống gang dẻo phục hồi">Ống gang dẻo phục hồi (C = 120)</option>
+                    <option value="120" data-name="Ống thép mới">Ống thép mới (C = 120)</option>
+                    <option value="110" data-name="Ống thép phục hồi">Ống thép phục hồi (C = 110)</option>
+                    <option value="90" data-name="Ống thép cũ">Ống thép cũ (C = 90)</option>
+                    <option value="110" data-name="Ống gang xám">Ống gang xám (C = 110)</option>
                 </select>
             </div>
         </div>
@@ -267,6 +271,10 @@
                 <span class="result-value" id="res_v">- m/s</span>
             </div>
             <div class="result-item">
+                <span class="result-label">Đề xuất chọn:</span>
+                <span class="highlight-suggest" id="res_suggest">-</span>
+            </div>
+            <div class="result-item">
                 <span class="result-label">Tổn thất thủy lực (toàn tuyến):</span>
                 <span class="result-value" id="res_hf">- m</span>
             </div>
@@ -275,12 +283,17 @@
 </div>
 
 <script>
+    const STANDARD_PIPES = [50, 63, 75, 90, 110, 125, 140, 160, 180, 200, 225, 250, 280, 315, 355, 400, 450, 500, 560, 630, 710, 800, 900, 1000, 1200];
+
     function calculatePipeDiameter() {
         const qDay = parseFloat(document.getElementById('q_day').value) || 0;
         const L = parseFloat(document.getElementById('length').value) || 0;
         const hHead = parseFloat(document.getElementById('h_head').value) || 0;
         const hTail = parseFloat(document.getElementById('h_tail').value) || 0;
-        const C = parseFloat(document.getElementById('material').value) || 140;
+        
+        const matSelect = document.getElementById('material');
+        const C = parseFloat(matSelect.value) || 140;
+        const matName = matSelect.options[matSelect.selectedIndex].getAttribute('data-name') || 'Ống';
 
         const deltaH = hHead - hTail;
 
@@ -288,6 +301,7 @@
             document.getElementById('res_d_m').innerText = "- m";
             document.getElementById('res_d_mm').innerText = "Không hợp lệ";
             document.getElementById('res_v').innerText = "- m/s";
+            document.getElementById('res_suggest').innerText = "-";
             document.getElementById('res_hf').innerText = "- m";
             return;
         }
@@ -304,9 +318,36 @@
         // Tổn thất thủy lực toàn tuyến Hf (m)
         const hf = (11.737 * L * Math.pow(qSec, 1.852)) / (Math.pow(C, 1.852) * Math.pow(dM, 4.87));
 
+        // Tra cấp đường ống tiêu chuẩn gần nhất
+        let closestIndex = 0;
+        let minDiff = Math.abs(STANDARD_PIPES[0] - dMm);
+        for (let i = 1; i < STANDARD_PIPES.length; i++) {
+            let diff = Math.abs(STANDARD_PIPES[i] - dMm);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestIndex = i;
+            }
+        }
+
+        // Tính vận tốc thực tế của cấp ống được chọn
+        let selectedDN = STANDARD_PIPES[closestIndex];
+        let vSelected = (4 * qSec) / (Math.PI * Math.pow(selectedDN / 1000, 2));
+
+        // Tự động nhảy cấp nếu vận tốc vượt dải hợp lý (0.6 - 1.5 m/s)
+        if (vSelected > 1.5 && closestIndex < STANDARD_PIPES.length - 1) {
+            closestIndex += 1;
+        } else if (vSelected < 0.6 && closestIndex > 0) {
+            closestIndex -= 1;
+        }
+
+        let finalDN = STANDARD_PIPES[closestIndex];
+        let finalV = (4 * qSec) / (Math.PI * Math.pow(finalDN / 1000, 2));
+
+        // Hiển thị kết quả cùng tên vật liệu
         document.getElementById('res_d_m').innerText = dM.toFixed(4) + " m";
         document.getElementById('res_d_mm').innerText = dMm.toFixed(1) + " mm";
         document.getElementById('res_v').innerText = v.toFixed(3) + " m/s";
+        document.getElementById('res_suggest').innerText = matName + " DN" + finalDN + " (v = " + finalV.toFixed(2) + " m/s)";
         document.getElementById('res_hf').innerText = hf.toFixed(2) + " m";
     }
 
