@@ -16,7 +16,7 @@
             --accent-blue: #005a9e;
             --result-bg: #eef7ee;
 
-            /* Tone màu shade vàng rất nhạt và dịu mắt */
+            /* Tone màu shade vàng nhạt */
             --focus-yellow-bg: #fffde6;
             --focus-yellow-border: #e6b800;
         }
@@ -207,14 +207,12 @@
             font-weight: 700;
         }
 
-        /* Màu tím nổi bật cho Đề xuất chọn */
         .highlight-suggest {
             color: #6b21a8;
             font-size: 0.95rem;
             font-weight: 700;
         }
 
-        /* Footer Copyright góc dưới bên trái */
         .footer-copyright {
             margin-top: 12px;
             padding-top: 8px;
@@ -222,7 +220,7 @@
             font-size: 0.75rem;
             color: #666666;
             text-align: left;
-            font-weight: 500;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -292,7 +290,7 @@
         </div>
 
         <div class="footer-copyright">
-            Copyright PHÒNG KỸ THUẬT - HueWACO
+             Copyright © PHÒNG KỸ THUẬT - HueWACO
         </div>
     </div>
 </div>
@@ -323,17 +321,13 @@
 
         const qSec = qDay / 86400;
 
-        // Công thức Hazen-Williams tính đường kính D (m)
         const dM = Math.pow((10.67 * L * Math.pow(qSec, 1.852)) / (deltaH * Math.pow(C, 1.852)), 1 / 4.87);
         const dMm = dM * 1000;
 
-        // Vận tốc dòng chảy v (m/s)
         const v = (4 * qSec) / (Math.PI * Math.pow(dM, 2));
 
-        // Tổn thất thủy lực toàn tuyến Hf (m)
         const hf = (11.737 * L * Math.pow(qSec, 1.852)) / (Math.pow(C, 1.852) * Math.pow(dM, 4.87));
 
-        // Tra cấp đường ống tiêu chuẩn gần nhất
         let closestIndex = 0;
         let minDiff = Math.abs(STANDARD_PIPES[0] - dMm);
         for (let i = 1; i < STANDARD_PIPES.length; i++) {
@@ -344,11 +338,9 @@
             }
         }
 
-        // Tính vận tốc thực tế của cấp ống được chọn
         let selectedDN = STANDARD_PIPES[closestIndex];
         let vSelected = (4 * qSec) / (Math.PI * Math.pow(selectedDN / 1000, 2));
 
-        // Tự động nhảy cấp nếu vận tốc vượt dải hợp lý (0.6 - 1.5 m/s)
         if (vSelected > 1.5 && closestIndex < STANDARD_PIPES.length - 1) {
             closestIndex += 1;
         } else if (vSelected < 0.6 && closestIndex > 0) {
@@ -358,7 +350,6 @@
         let finalDN = STANDARD_PIPES[closestIndex];
         let finalV = (4 * qSec) / (Math.PI * Math.pow(finalDN / 1000, 2));
 
-        // Hiển thị kết quả cùng tên vật liệu
         document.getElementById('res_d_m').innerText = dM.toFixed(4) + " m";
         document.getElementById('res_d_mm').innerText = dMm.toFixed(1) + " mm";
         document.getElementById('res_v').innerText = v.toFixed(3) + " m/s";
