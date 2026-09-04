@@ -165,7 +165,6 @@
         .highlight-mm { color: #d83b01; font-size: 1rem; font-weight: 700; }
         .highlight-suggest { color: #107c41; font-size: 0.92rem; font-weight: 700; text-align: right; }
 
-        /* Khung cảnh báo */
         .warning-box {
             margin-top: 10px;
             background-color: var(--warning-bg);
@@ -179,7 +178,7 @@
             display: none;
         }
 
-        .warning-title { font-weight: bold; color: var(--warning-red); margin-bottom: 3px; display: flex; align-items: center; gap: 4px; }
+        .warning-title { font-weight: bold; color: var(--warning-red); margin-bottom: 3px; }
 
         .footer-copyright {
             margin-top: 12px;
@@ -209,19 +208,19 @@
                 <input type="number" id="length" value="18750" inputmode="decimal" onfocus="this.select()" onchange="calculatePipeDiameter()">
             </div>
             <div class="form-group">
-                <label for="h_head">Áp lực điểm đầu (m):</label>
+                <label for="h_head">Áp lực điểm đầu H_đầu (m):</label>
                 <input type="number" id="h_head" value="50" inputmode="decimal" onfocus="this.select()" onchange="calculatePipeDiameter()">
             </div>
             <div class="form-group">
-                <label for="h_tail">Áp lực điểm cuối (m):</label>
+                <label for="h_tail">Áp lực yc điểm cuối H_cuối (m):</label>
                 <input type="number" id="h_tail" value="15" inputmode="decimal" onfocus="this.select()" onchange="calculatePipeDiameter()">
             </div>
             <div class="form-group" style="grid-column: span 2;">
                 <label for="material">Vật liệu đường ống:</label>
                 <select id="material" onchange="calculatePipeDiameter()">
-                    <option value="hdpe" data-c="140" data-name="Ống HDPE">Ống HDPE (PN10 - C = 140)</option>
+                    <option value="hdpe" data-c="140" data-name="Ống HDPE" selected>Ống HDPE (PN10 - C = 140)</option>
                     <option value="pvc" data-c="140" data-name="Ống uPVC">Ống uPVC (PN10 - C = 140)</option>
-                    <option value="gang_deo" data-c="130" data-name="Ống Gang dẻo" selected>Ống Gang dẻo mới (C = 130)</option>
+                    <option value="gang_deo" data-c="130" data-name="Ống Gang dẻo">Ống Gang dẻo mới (C = 130)</option>
                     <option value="gang_phuc_hoi" data-c="120" data-name="Ống Gang dẻo phục hồi">Ống Gang dẻo phục hồi (C = 120)</option>
                     <option value="thep_moi" data-c="120" data-name="Ống Thép mới">Ống Thép mới (C = 120)</option>
                     <option value="thep_phuc_hoi" data-c="110" data-name="Ống Thép phục hồi">Ống Thép phục hồi (C = 110)</option>
@@ -236,18 +235,18 @@
         <div class="section-title">Kết Quả Tính Toán</div>
         <div class="result-box">
             <div class="result-item">
-                <span class="result-label">Đường kính lý thuyết (D_in):</span>
+                <span class="result-label">Đường kính TRONG tối thiểu (D_trong_yc):</span>
                 <div class="result-value-group">
                     <span id="res_d_m" class="highlight-m">- m</span>
                     <span id="res_d_mm" class="highlight-mm">- mm</span>
                 </div>
             </div>
             <div class="result-item">
-                <span class="result-label">Đề xuất cỡ ống chọn:</span>
+                <span class="result-label">Đề xuất cỡ ống (đảm bảo H_cuối):</span>
                 <span class="highlight-suggest" id="res_suggest">-</span>
             </div>
             <div class="result-item">
-                <span class="result-label">Vận tốc dòng chảy thực tế:</span>
+                <span class="result-label">Vận tốc trong ống (theo D_trong):</span>
                 <span class="result-value" id="res_v">- m/s</span>
             </div>
             <div class="result-item">
@@ -258,11 +257,15 @@
                 <span class="result-label">Tổn thất đơn vị (i):</span>
                 <span class="result-value" id="res_i">- m/km</span>
             </div>
+            <div class="result-item">
+                <span class="result-label">Áp lực thực tế thu được tại cuối tuyến:</span>
+                <span class="result-value" id="res_h_end_actual" style="color:#107c41;">- m</span>
+            </div>
         </div>
 
-        <!-- Khung Cảnh Báo & Đề Xuất Nâng Cấp Ống -->
+        <!-- Khung Cảnh Báo -->
         <div id="warning_box" class="warning-box">
-            <div class="warning-title">⚠️ CẢNH BÁO TỔN THẤT ÁP LỰC CAO (i ≥ 5.0 m/km)</div>
+            <div class="warning-title">⚠️ CẢNH BÁO TỔN THẤT CỤC BỘ / ĐƠN VỊ CAO (i ≥ 5.0 m/km)</div>
             <div id="warning_content">Tổn thất đường ống hiện tại lớn hơn mức kinh tế cho phép.</div>
         </div>
 
@@ -273,7 +276,7 @@
 </div>
 
 <script>
-    // Danh mục đường kính ngoài OD / DN tiêu chuẩn cho từng loại vật liệu & Đường kính trong thực tế D_in (mm)
+    // Bảng quy đổi Đường kính ngoài DN/OD và Đường kính trong thực tế D_trong (mm)
     const PIPE_CATALOG = {
         hdpe: [
             { dn: 50, din: 44.0 }, { dn: 63, din: 55.4 }, { dn: 75, din: 66.0 }, { dn: 90, din: 79.2 },
@@ -297,7 +300,6 @@
         ]
     };
 
-    // Áp dụng danh mục Gang dẻo chung cho Thép, Inox, Gang xám
     PIPE_CATALOG.gang_phuc_hoi = PIPE_CATALOG.gang_deo;
     PIPE_CATALOG.thep_moi = PIPE_CATALOG.gang_deo;
     PIPE_CATALOG.thep_phuc_hoi = PIPE_CATALOG.gang_deo;
@@ -308,92 +310,84 @@
         const qDay = parseFloat(document.getElementById('q_day').value) || 0;
         const L = parseFloat(document.getElementById('length').value) || 0;
         const hHead = parseFloat(document.getElementById('h_head').value) || 0;
-        const hTail = parseFloat(document.getElementById('h_tail').value) || 0;
+        const hTailReq = parseFloat(document.getElementById('h_tail').value) || 0;
         
         const matSelect = document.getElementById('material');
         const matKey = matSelect.value;
         const C = parseFloat(matSelect.options[matSelect.selectedIndex].getAttribute('data-c')) || 130;
         const matName = matSelect.options[matSelect.selectedIndex].getAttribute('data-name') || 'Ống';
 
-        const deltaH = hHead - hTail;
+        const deltaH_allow = hHead - hTailReq;
 
-        if (qDay <= 0 || L <= 0 || deltaH <= 0) {
+        if (qDay <= 0 || L <= 0 || deltaH_allow <= 0) {
             document.getElementById('res_d_m').innerText = "- m";
             document.getElementById('res_d_mm').innerText = "Không hợp lệ";
             document.getElementById('res_v').innerText = "- m/s";
             document.getElementById('res_suggest').innerText = "-";
             document.getElementById('res_hf').innerText = "- m";
             document.getElementById('res_i').innerText = "- m/km";
+            document.getElementById('res_h_end_actual').innerText = "- m";
             document.getElementById('warning_box').style.display = "none";
             return;
         }
 
         const qSec = qDay / 86400; // m3/s
 
-        // 1. Tính đường kính trong lý thuyết (m) theo Hazen-Williams
-        const dM = Math.pow((10.67 * L * Math.pow(qSec, 1.852)) / (deltaH * Math.pow(C, 1.852)), 1 / 4.87);
-        const dMm = dM * 1000;
+        // 1. D_trong lý thuyết tối thiểu để tổn thất không quá deltaH_allow (m)
+        const dMinM = Math.pow((10.67 * L * Math.pow(qSec, 1.852)) / (deltaH_allow * Math.pow(C, 1.852)), 1 / 4.87);
+        const dMinMm = dMinM * 1000;
 
-        // 2. Lựa chọn đường kính ống từ danh mục theo vật liệu
+        // 2. Chọn cỡ ống trong catalog có D_trong >= D_trong_ly_thuyet để ĐẢM BẢO ÁP LỰC ĐIỂM CUỐI
         const catalog = PIPE_CATALOG[matKey] || PIPE_CATALOG.gang_deo;
         
-        let closestIndex = 0;
-        let minDiff = Math.abs(catalog[0].din - dMm);
-        for (let i = 1; i < catalog.length; i++) {
-            let diff = Math.abs(catalog[i].din - dMm);
-            if (diff < minDiff) {
-                minDiff = diff;
-                closestIndex = i;
+        let selectedIndex = -1;
+        for (let i = 0; i < catalog.length; i++) {
+            if (catalog[i].din >= dMinMm) {
+                selectedIndex = i;
+                break;
             }
         }
 
-        // Tối ưu hóa vận tốc (khoảng kinh tế 0.6 - 1.5 m/s)
-        let selectedPipe = catalog[closestIndex];
-        let vSelected = (4 * qSec) / (Math.PI * Math.pow(selectedPipe.din / 1000, 2));
+        // Nếu không tìm thấy ống đủ lớn, lấy cấp ống lớn nhất
+        if (selectedIndex === -1) selectedIndex = catalog.length - 1;
 
-        if (vSelected > 1.5 && closestIndex < catalog.length - 1) {
-            closestIndex += 1;
-        } else if (vSelected < 0.6 && closestIndex > 0) {
-            closestIndex -= 1;
-        }
-
-        const finalPipe = catalog[closestIndex];
+        const finalPipe = catalog[selectedIndex];
         const dInMet = finalPipe.din / 1000; // m
 
-        // 3. Tính toán các thông số thủy lực theo D_trong thực tế
+        // 3. Tính toán lại thủy lực chính xác dựa trên D_TRONG của cỡ ống được chọn
         const finalV = (4 * qSec) / (Math.PI * Math.pow(dInMet, 2));
         const finalHf = (10.67 * L * Math.pow(qSec, 1.852)) / (Math.pow(C, 1.852) * Math.pow(dInMet, 4.87));
         const finalI = (finalHf / L) * 1000; // m/km
+        const hEndActual = hHead - finalHf;
 
-        // Hiển thị kết quả
-        document.getElementById('res_d_m').innerText = dM.toFixed(4) + " m";
-        document.getElementById('res_d_mm').innerText = dMm.toFixed(1) + " mm";
+        // Hiển thị kết quả lên màn hình
+        document.getElementById('res_d_m').innerText = dMinM.toFixed(4) + " m";
+        document.getElementById('res_d_mm').innerText = dMinMm.toFixed(1) + " mm";
         document.getElementById('res_suggest').innerText = `${matName} DN${finalPipe.dn} (D_trong = ${finalPipe.din} mm)`;
         document.getElementById('res_v').innerText = finalV.toFixed(3) + " m/s";
         document.getElementById('res_hf').innerText = finalHf.toFixed(2) + " m";
         document.getElementById('res_i').innerText = finalI.toFixed(2) + " m/km";
+        document.getElementById('res_h_end_actual').innerText = hEndActual.toFixed(2) + " m";
 
-        // 4. Kiểm tra điều kiện Cảnh báo tổn thất i >= 5 m/km
+        // 4. Kiểm tra Cảnh báo tổn thất đơn vị i >= 5 m/km
         const warnBox = document.getElementById('warning_box');
         const warnContent = document.getElementById('warning_content');
 
         if (finalI >= 5.0) {
             warnBox.style.display = "block";
-
-            // Kiểm tra tuyến ống cấp cao hơn 1 bậc
-            if (closestIndex < catalog.length - 1) {
-                const nextPipe = catalog[closestIndex + 1];
+            if (selectedIndex < catalog.length - 1) {
+                const nextPipe = catalog[selectedIndex + 1];
                 const nextDinM = nextPipe.din / 1000;
                 const nextV = (4 * qSec) / (Math.PI * Math.pow(nextDinM, 2));
                 const nextHf = (10.67 * L * Math.pow(qSec, 1.852)) / (Math.pow(C, 1.852) * Math.pow(nextDinM, 4.87));
                 const nextI = (nextHf / L) * 1000;
 
-                warnContent.innerHTML = `Tổn thất thủy lực đơn vị hiện tại <strong>i = ${finalI.toFixed(2)} m/km</strong> vượt ngưỡng kinh tế cho phép (5.0 m/km).<br>` +
-                    `👉 <strong>Đề xuất nâng lên cỡ ống:</strong> <span style="color:#107c41; font-weight:bold;">${matName} DN${nextPipe.dn}</span> (D_trong = ${nextPipe.din} mm)<br>` +
+                warnContent.innerHTML = `Tổn thất đơn vị hiện tại <strong>i = ${finalI.toFixed(2)} m/km</strong> lớn hơn ngưỡng kinh tế cho phép (5.0 m/km).<br>` +
+                    `👉 <strong>Đề xuất nâng lên cấp ống kinh tế hơn:</strong> <span style="color:#107c41; font-weight:bold;">${matName} DN${nextPipe.dn}</span> (D_trong = ${nextPipe.din} mm)<br>` +
                     `• Vận tốc mới: <strong>v = ${nextV.toFixed(2)} m/s</strong><br>` +
                     `• Tổn thất đơn vị mới: <strong>i = ${nextI.toFixed(2)} m/km</strong> (Tổn thất toàn tuyến: ${nextHf.toFixed(2)} m)`;
             } else {
-                warnContent.innerHTML = `Tổn thất đơn vị <strong>i = ${finalI.toFixed(2)} m/km ≥ 5.0 m/km</strong>. Đây đã là cỡ ống lớn nhất trong danh mục vật liệu này, nên xem xét đi song song tuyến ống thứ 2 hoặc tăng áp lực nguồn.`;
+                warnContent.innerHTML = `Tổn thất đơn vị <strong>i = ${finalI.toFixed(2)} m/km ≥ 5.0 m/km</strong>. Đây đã là cỡ ống lớn nhất trong danh mục.`;
             }
         } else {
             warnBox.style.display = "none";
