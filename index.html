@@ -86,6 +86,8 @@
             text-overflow: ellipsis;
         }
 
+        sub { font-size: 0.75em; vertical-align: sub; }
+
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -208,11 +210,11 @@
                 <input type="number" id="length" value="18750" inputmode="decimal" onfocus="this.select()" onchange="calculatePipeDiameter()">
             </div>
             <div class="form-group">
-                <label for="h_head">Áp lực điểm đầu H_đầu (m):</label>
+                <label for="h_head">Áp lực điểm đầu H<sub>đầu</sub> (m):</label>
                 <input type="number" id="h_head" value="50" inputmode="decimal" onfocus="this.select()" onchange="calculatePipeDiameter()">
             </div>
             <div class="form-group">
-                <label for="h_tail">Áp lực yc điểm cuối H_cuối (m):</label>
+                <label for="h_tail">Áp lực yc điểm cuối H<sub>cuối</sub> (m):</label>
                 <input type="number" id="h_tail" value="15" inputmode="decimal" onfocus="this.select()" onchange="calculatePipeDiameter()">
             </div>
             <div class="form-group" style="grid-column: span 2;">
@@ -235,22 +237,22 @@
         <div class="section-title">Kết Quả Tính Toán</div>
         <div class="result-box">
             <div class="result-item">
-                <span class="result-label">Đường kính TRONG tối thiểu (D_trong_yc):</span>
+                <span class="result-label">Đường kính TRONG tối thiểu (D<sub>trong_yc</sub>):</span>
                 <div class="result-value-group">
                     <span id="res_d_m" class="highlight-m">- m</span>
                     <span id="res_d_mm" class="highlight-mm">- mm</span>
                 </div>
             </div>
             <div class="result-item">
-                <span class="result-label">Đề xuất cỡ ống (đảm bảo H_cuối):</span>
+                <span class="result-label">Đề xuất cỡ ống (đảm bảo H<sub>cuối</sub>):</span>
                 <span class="highlight-suggest" id="res_suggest">-</span>
             </div>
             <div class="result-item">
-                <span class="result-label">Vận tốc trong ống (theo D_trong):</span>
+                <span class="result-label">Vận tốc trong ống (theo D<sub>trong</sub>):</span>
                 <span class="result-value" id="res_v">- m/s</span>
             </div>
             <div class="result-item">
-                <span class="result-label">Tổn thất thủy lực (toàn tuyến):</span>
+                <span class="result-label">Tổn thất thủy lực h<sub>f</sub> (toàn tuyến):</span>
                 <span class="result-value" id="res_hf">- m</span>
             </div>
             <div class="result-item">
@@ -265,7 +267,7 @@
 
         <!-- Khung Cảnh Báo -->
         <div id="warning_box" class="warning-box">
-            <div class="warning-title">⚠️ CẢNH BÁO TỔN THẤT CỤC BỘ / ĐƠN VỊ CAO (i ≥ 5.0 m/km)</div>
+            <div class="warning-title">⚠️ CẢNH BÁO TỔN THẤT ĐƠN VỊ CAO (i ≥ 5.0 m/km)</div>
             <div id="warning_content">Tổn thất đường ống hiện tại lớn hơn mức kinh tế cho phép.</div>
         </div>
 
@@ -276,14 +278,14 @@
 </div>
 
 <script>
-    // Bảng quy đổi Đường kính ngoài DN/OD và Đường kính trong thực tế D_trong (mm)
+    // Bảng quy đổi Đường kính ngoài DN/OD và Đường kính trong thực tế D_trong (mm) chuẩn PN10
     const PIPE_CATALOG = {
         hdpe: [
             { dn: 50, din: 44.0 }, { dn: 63, din: 55.4 }, { dn: 75, din: 66.0 }, { dn: 90, din: 79.2 },
             { dn: 110, din: 96.8 }, { dn: 125, din: 110.2 }, { dn: 140, din: 123.4 }, { dn: 160, din: 141.0 },
             { dn: 180, din: 158.6 }, { dn: 200, din: 176.2 }, { dn: 225, din: 198.2 }, { dn: 250, din: 220.2 },
             { dn: 280, din: 246.6 }, { dn: 315, din: 277.4 }, { dn: 355, din: 312.6 }, { dn: 400, din: 352.6 },
-            { dn: 450, din: 396.6 }, { dn: 500, din: 440.6 }, { dn: 560, din: 493.4 }, { dn: 630, din: 555.0 },
+            { dn: 450, din: 396.6 }, { dn: 500, din: 440.6 }, { dn: 560, din: 493.4 }, { dn: 630, din: 555.2 },
             { dn: 710, din: 625.6 }, { dn: 800, din: 705.0 }, { dn: 900, din: 793.0 }, { dn: 1000, din: 881.0 }, { dn: 1200, din: 1057.0 }
         ],
         pvc: [
@@ -305,6 +307,11 @@
     PIPE_CATALOG.thep_phuc_hoi = PIPE_CATALOG.gang_deo;
     PIPE_CATALOG.inox = PIPE_CATALOG.gang_deo;
     PIPE_CATALOG.gang_xam = PIPE_CATALOG.gang_deo;
+
+    // Công thức Hazen-Williams thủy lực chuẩn xác
+    function calcHazenWilliamsHf(L, Q, C, D) {
+        return (10.6703 * L * Math.pow(Q, 1.852)) / (Math.pow(C, 1.852) * Math.pow(D, 4.8704));
+    }
 
     function calculatePipeDiameter() {
         const qDay = parseFloat(document.getElementById('q_day').value) || 0;
@@ -333,11 +340,11 @@
 
         const qSec = qDay / 86400; // m3/s
 
-        // 1. D_trong lý thuyết tối thiểu để tổn thất không quá deltaH_allow (m)
-        const dMinM = Math.pow((10.67 * L * Math.pow(qSec, 1.852)) / (deltaH_allow * Math.pow(C, 1.852)), 1 / 4.87);
+        // 1. Tính D_trong tối thiểu lý thuyết (m)
+        const dMinM = Math.pow((10.6703 * L * Math.pow(qSec, 1.852)) / (deltaH_allow * Math.pow(C, 1.852)), 1 / 4.8704);
         const dMinMm = dMinM * 1000;
 
-        // 2. Chọn cỡ ống trong catalog có D_trong >= D_trong_ly_thuyet để ĐẢM BẢO ÁP LỰC ĐIỂM CUỐI
+        // 2. Tra catalog tìm ống có D_trong >= D_trong_yc
         const catalog = PIPE_CATALOG[matKey] || PIPE_CATALOG.gang_deo;
         
         let selectedIndex = -1;
@@ -348,28 +355,27 @@
             }
         }
 
-        // Nếu không tìm thấy ống đủ lớn, lấy cấp ống lớn nhất
         if (selectedIndex === -1) selectedIndex = catalog.length - 1;
 
         const finalPipe = catalog[selectedIndex];
         const dInMet = finalPipe.din / 1000; // m
 
-        // 3. Tính toán lại thủy lực chính xác dựa trên D_TRONG của cỡ ống được chọn
+        // 3. Tính lại thông số thủy lực thực tế chuẩn
         const finalV = (4 * qSec) / (Math.PI * Math.pow(dInMet, 2));
-        const finalHf = (10.67 * L * Math.pow(qSec, 1.852)) / (Math.pow(C, 1.852) * Math.pow(dInMet, 4.87));
+        const finalHf = calcHazenWilliamsHf(L, qSec, C, dInMet);
         const finalI = (finalHf / L) * 1000; // m/km
         const hEndActual = hHead - finalHf;
 
-        // Hiển thị kết quả lên màn hình
+        // Cập nhật kết quả lên giao diện
         document.getElementById('res_d_m').innerText = dMinM.toFixed(4) + " m";
         document.getElementById('res_d_mm').innerText = dMinMm.toFixed(1) + " mm";
-        document.getElementById('res_suggest').innerText = `${matName} DN${finalPipe.dn} (D_trong = ${finalPipe.din} mm)`;
+        document.getElementById('res_suggest').innerHTML = `${matName} DN${finalPipe.dn} (D<sub>trong</sub> = ${finalPipe.din} mm)`;
         document.getElementById('res_v').innerText = finalV.toFixed(3) + " m/s";
         document.getElementById('res_hf').innerText = finalHf.toFixed(2) + " m";
         document.getElementById('res_i').innerText = finalI.toFixed(2) + " m/km";
         document.getElementById('res_h_end_actual').innerText = hEndActual.toFixed(2) + " m";
 
-        // 4. Kiểm tra Cảnh báo tổn thất đơn vị i >= 5 m/km
+        // 4. Kiểm tra Cảnh báo i >= 5 m/km
         const warnBox = document.getElementById('warning_box');
         const warnContent = document.getElementById('warning_content');
 
@@ -379,11 +385,11 @@
                 const nextPipe = catalog[selectedIndex + 1];
                 const nextDinM = nextPipe.din / 1000;
                 const nextV = (4 * qSec) / (Math.PI * Math.pow(nextDinM, 2));
-                const nextHf = (10.67 * L * Math.pow(qSec, 1.852)) / (Math.pow(C, 1.852) * Math.pow(nextDinM, 4.87));
+                const nextHf = calcHazenWilliamsHf(L, qSec, C, nextDinM);
                 const nextI = (nextHf / L) * 1000;
 
                 warnContent.innerHTML = `Tổn thất đơn vị hiện tại <strong>i = ${finalI.toFixed(2)} m/km</strong> lớn hơn ngưỡng kinh tế cho phép (5.0 m/km).<br>` +
-                    `👉 <strong>Đề xuất nâng lên cấp ống kinh tế hơn:</strong> <span style="color:#107c41; font-weight:bold;">${matName} DN${nextPipe.dn}</span> (D_trong = ${nextPipe.din} mm)<br>` +
+                    `👉 <strong>Đề xuất nâng lên cấp ống kinh tế hơn:</strong> <span style="color:#107c41; font-weight:bold;">${matName} DN${nextPipe.dn}</span> (D<sub>trong</sub> = ${nextPipe.din} mm)<br>` +
                     `• Vận tốc mới: <strong>v = ${nextV.toFixed(2)} m/s</strong><br>` +
                     `• Tổn thất đơn vị mới: <strong>i = ${nextI.toFixed(2)} m/km</strong> (Tổn thất toàn tuyến: ${nextHf.toFixed(2)} m)`;
             } else {
